@@ -27,16 +27,27 @@ function DashboardPage() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const handleAdd = () => { setEditData(null); setShowModal(true); };
-  const handleEdit = (rowData) => { setEditData(rowData); setShowModal(true); };
+  const handleAdd = () => {
+    setEditData(null);
+    setShowModal(true);
+  };
+
+  const handleEdit = (rowData) => {
+    setEditData(rowData);
+    setShowModal(true);
+  };
 
   const handleSubmit = async (formData) => {
     try {
       if (formData.id) {
         await API.put(`/posts/${formData.id}`, formData);
-        setData((prev) => prev.map((item) => item.id === formData.id ? formData : item));
+        setData((prev) =>
+          prev.map((item) => (item.id === formData.id ? formData : item))
+        );
         Swal.fire("Success", "Entry updated successfully.", "success");
       } else {
         const response = await API.post("/posts", formData);
@@ -49,11 +60,23 @@ function DashboardPage() {
     }
   };
 
-  const filteredData = (data || []).filter((item) =>
-    item.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const paginatedData = filteredData.slice(
+  // دالة البحث باستخدام API
+  const handleSearch = async (term) => {
+    setLoading(true);
+    try {
+      // تعديل نقطة النهاية حسب دعم API للبحث
+      const response = await API.get(`/posts?search=${term}`);
+      setData(response.data || []);
+    } catch (error) {
+      Swal.fire("Error", "Search failed.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Pagination بدون فلترة محلية
+  const totalPages = Math.ceil((data || []).length / itemsPerPage);
+  const paginatedData = (data || []).slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -66,15 +89,22 @@ function DashboardPage() {
         <div className="flex-grow-1 p-4">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h2>Dashboard</h2>
-            <button className="btn btn-primary" onClick={handleAdd}>Add Entry</button>
+            <button className="btn btn-primary" onClick={handleAdd}>
+              Add Entry
+            </button>
           </div>
 
+          {/* حقل البحث */}
           <input
             type="text"
             className="form-control mb-3"
             placeholder="Search by Title..."
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+              handleSearch(e.target.value);
+            }}
           />
 
           {loading ? (
@@ -89,8 +119,13 @@ function DashboardPage() {
               <div className="d-flex justify-content-center mt-3">
                 <ul className="pagination flex-wrap justify-content-center">
                   {Array.from({ length: totalPages }, (_, i) => (
-                    <li key={i+1} className={`page-item ${currentPage === i+1 ? "active" : ""}`}>
-                      <button className="page-link" onClick={() => setCurrentPage(i+1)}>{i+1}</button>
+                    <li
+                      key={i + 1}
+                      className={`page-item ${currentPage === i + 1 ? "active" : ""}`}
+                    >
+                      <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
+                        {i + 1}
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -99,7 +134,11 @@ function DashboardPage() {
           )}
 
           {showModal && (
-            <EntryForm initialData={editData} onSubmit={handleSubmit} onClose={() => setShowModal(false)} />
+            <EntryForm
+              initialData={editData}
+              onSubmit={handleSubmit}
+              onClose={() => setShowModal(false)}
+            />
           )}
         </div>
       </div>

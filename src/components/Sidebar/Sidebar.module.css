@@ -27,3 +27,9 @@
 .sidebar a:hover {
   background-color: #495057;
 }
+/* اخفاء الـ sidebar في الشاشات الصغيرة */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+}
